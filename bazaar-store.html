@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Bazaar — Online Store</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+<!-- Official Razorpay checkout script -->
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+<style>
+  :root{
+    --navy:#131921; --navyLight:#232F3E; --orange:#FF9900; --yellow:#FFD814; --yellowDark:#F7CA00;
+    --bg:#F7F7F7; --card:#FFFFFF; --text:#0F1111; --textSoft:#565959; --line:#D5D9D9;
+    --green:#007600; --danger:#B12704; --star:#FFA41C;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--bg);color:var(--text);font-family:'Inter',sans-serif;}
+  header{background:var(--navy); color:#fff; position:sticky; top:0; z-index:20;}
+  .header-top{display:flex; align-items:center; gap:16px; padding:10px 20px; flex-wrap:wrap;}
+  .logo{font-size:22px; font-weight:700; cursor:pointer; letter-spacing:-0.5px;}
+  .logo span{color:var(--orange);}
+  .search-bar{flex:1; display:flex; min-width:220px;}
+  .search-bar input{flex:1; border:none; padding:10px 12px; font-size:14px; outline:none;}
+  .search-bar button{background:var(--orange); border:none; padding:0 16px; cursor:pointer; font-size:16px;}
+  .header-actions{display:flex; align-items:center; gap:20px; font-size:13px; white-space:nowrap;}
+  .header-actions .item{cursor:pointer; display:flex; flex-direction:column; line-height:1.2;}
+  .header-actions .item b{font-size:14px;}
+  .header-actions .item:hover{outline:1px solid #fff; padding:2px 4px; margin:-2px -4px;}
+  .subnav{background:var(--navyLight); padding:8px 20px; display:flex; gap:16px; font-size:13px; overflow-x:auto;}
+  .subnav span{cursor:pointer; white-space:nowrap;}
+  .subnav span.active{text-decoration:underline; font-weight:600;}
+  .wrap{max-width:1200px; margin:0 auto; padding:20px;}
+  .btn{font-size:13px; font-weight:600; padding:9px 14px; border-radius:20px; border:1px solid #A88734; cursor:pointer;
+       background:linear-gradient(to bottom, var(--yellow), var(--yellowDark)); color:var(--text);}
+  .btn.orange{background:linear-gradient(to bottom, #F7A03D, #E27B15); border-color:#A45D18; color:#fff;}
+  .btn.outline{background:#fff; border:1px solid var(--line); color:var(--text);}
+  .btn.danger{background:#fff; color:var(--danger); border:1px solid var(--danger);}
+  .btn:disabled{opacity:0.5; cursor:not-allowed;}
+  .field{display:block; margin-bottom:14px;}
+  .field span{font-size:12px; font-weight:600; color:var(--textSoft); display:block; margin-bottom:4px;}
+  .field input, .field textarea, .field select{
+      width:100%; padding:9px 11px; border:1px solid var(--line); border-radius:4px; background:#fff; font-size:14px;
+      color:var(--text); font-family:'Inter',sans-serif; box-sizing:border-box;
+  }
+  .product-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(220px,1fr)); gap:16px;}
+  .product-card{background:var(--card); border:1px solid var(--line); border-radius:6px; padding:14px; cursor:pointer; transition:box-shadow .15s;}
+  .product-card:hover{box-shadow:0 2px 10px rgba(0,0,0,0.12);}
+  .product-img{width:100%; height:180px; object-fit:cover; border-radius:4px; background:#f0f0f0;}
+  .stars{color:var(--star); font-size:13px;}
+  .price-row{display:flex; align-items:baseline; gap:8px; margin-top:6px;}
+  .price{font-size:19px; font-weight:700;}
+  .mrp{font-size:13px; color:var(--textSoft); text-decoration:line-through;}
+  .discount{font-size:13px; color:var(--green); font-weight:600;}
+  .cat-chip{font-size:12px; padding:6px 12px; border:1px solid var(--line); background:#fff; border-radius:20px; cursor:pointer;}
+  .cat-chip.active{background:var(--navy); color:#fff; border-color:var(--navy);}
+  .grid-cats{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:16px;}
+  .detail-grid{display:grid; grid-template-columns:400px 1fr 280px; gap:28px;}
+  @media (max-width:900px){ .detail-grid{grid-template-columns:1fr !important;} }
+  .size-chip{font-size:13px; padding:8px 14px; border:1px solid var(--line); border-radius:4px; background:#fff; cursor:pointer;}
+  .size-chip.active{border-color:var(--navy); background:var(--navy); color:#fff;}
+  .buybox{border:1px solid var(--line); border-radius:8px; padding:16px; background:#fff;}
+  .cart-row{display:flex; gap:16px; padding:16px; border-bottom:1px solid var(--line); align-items:center; background:#fff;}
+  .qty-btn{border:1px solid var(--line); background:#f0f0f0; cursor:pointer; padding:4px 10px; border-radius:4px;}
+  .card-box{border:1px solid var(--line); border-radius:6px; padding:16px; margin:16px 0; background:#fff;}
+  .row-between{display:flex; justify-content:space-between;}
+  footer{background:var(--navy); color:#ccc; padding:24px; text-align:center; font-size:12px; margin-top:40px;}
+  a.link{text-decoration:underline; cursor:pointer; color:#007185;}
+  .admin-row{display:flex; align-items:center; gap:16px; padding:14px; border-bottom:1px solid var(--line); background:#fff;}
+  .thumb-img{width:60px; height:60px; object-fit:cover; border-radius:4px; background:#f0f0f0;}
+  .breadcrumb{font-size:12px; color:var(--textSoft); margin-bottom:16px; cursor:pointer;}
+  .badge-secure{font-size:11px; color:var(--green); display:flex; align-items:center; gap:4px; margin-top:8px;}
+  input:focus, textarea:focus, select:focus, button:focus{outline:2px solid #007185; outline-offset:1px;}
+  .file-drop{border:1px dashed var(--line); border-radius:6px; padding:16px; text-align:center; cursor:pointer; background:#fafafa;}
+  .preview-img{max-width:140px; max-height:140px; border-radius:4px; margin-top:10px; object-fit:cover;}
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script>
+/* =========================================================
+   CONFIG — point this at your deployed backend (see README)
+   ========================================================= */
+const API_BASE_URL = "http://localhost:5000"; // change after you deploy the backend
+const RAZORPAY_KEY_ID = "rzp_test_TEJGKvLw3trZ5m"; // your Razorpay PUBLIC key id (safe to expose client-side)
+
+// ---------------- Data ----------------
+const CATEGORIES = ["Outerwear","Knitwear","Tailoring","Denim","Accessories"];
+
+let products = [
+  { id:"OC-014", name:"Wool Overcoat — Camel Check", category:"Outerwear", price:4200, mrp:5999, rating:4.3, reviews:212, image:"images/wool-overcoat.jpg", sizes:["XS","S","M","L","XL"], desc:"Full-length camel wool overcoat with a hand-finished horn button placket. Cut for layering, woven in a subtle windowpane check." },
+  { id:"KN-002", name:"Cable Knit Sweater — Oatmeal", category:"Knitwear", price:1450, mrp:1999, rating:4.5, reviews:531, image:"images/sweater.jpg", sizes:["XS","S","M","L","XL"], desc:"Heavyweight oatmeal cable knit, hand-loomed from undyed merino. Ribbed cuffs and hem for structure." },
+  { id:"DN-021", name:"Raw Denim Jean — Indigo", category:"Denim", price:1650, mrp:2299, rating:4.1, reviews:876, image:"images/jean.jpg", sizes:["28","30","32","34","36"], desc:"13oz raw indigo selvedge, unwashed. Will break in and fade to the shape of your wear over the first hundred days." },
+  { id:"TR-009", name:"Silk Trouser — Ink Black", category:"Tailoring", price:2100, mrp:2799, rating:4.4, reviews:154, image:"images/silk-trouser.jpg", sizes:["XS","S","M","L","XL"], desc:"Ink-black silk-wool blend trouser with a soft drape and a single pressed pleat. Half-lined." },
+  { id:"SH-033", name:"Linen Shirt — Bone", category:"Tailoring", price:950, mrp:1399, rating:4.2, reviews:643, image:"images/lenen-shirt.jpg", sizes:["XS","S","M","L","XL"], desc:"Washed bone linen, cut generously for warm weather. Mother-of-pearl buttons, a faint self-stripe." },
+  { id:"OC-018", name:"Field Jacket — Olive", category:"Outerwear", price:2600, mrp:3499, rating:4.6, reviews:389, image:"images/jacket.jpg", sizes:["XS","S","M","L","XL"], desc:"Olive cotton-canvas field jacket, garment-dyed and stone-washed. Four bellows pockets, brass hardware." },
+  { id:"KN-007", name:"Merino Turtleneck — Clay", category:"Knitwear", price:1200, mrp:1599, rating:4.0, reviews:98, image:"images/turtleneck.jpg", sizes:["XS","S","M","L","XL"], desc:"Fine-gauge clay-colored merino turtleneck. Light enough to layer, warm enough to wear alone." },
+  { id:"AC-004", name:"Leather Belt — Espresso", category:"Accessories", price:850, mrp:1199, rating:4.7, reviews:1204, image:"images/leather-belt.jpg", sizes:["One Size"], desc:"Vegetable-tanned espresso leather, solid brass buckle. Will darken and soften with age." },
+  { id:"AC-011", name:"Cashmere Scarf — Dove Grey", category:"Accessories", price:1350, mrp:1799, rating:4.3, reviews:276, image:"images/chino.jpg", sizes:["One Size"], desc:"Two-ply cashmere scarf in dove grey with a fine tonal stripe. Fringed edge, finished by hand." },
+  { id:"DN-026", name:"Selvedge Chino — Sand", category:"Denim", price:1500, mrp:1999, rating:3.9, reviews:412, image:"images/overcoat.jpg", sizes:["28","30","32","34","36"], desc:"Sand-colored cotton twill chino with a selvedge outseam. Tapered leg, tonal stitching." },
+];
+
+// Hardcoded accounts — no hints shown in the UI
+let users = [
+  { email:"liteshrao@gmail.com", password:"litesh", name:"Litesh Rao", role:"admin" }
+];
+
+// ---------------- State ----------------
+let state = {
+  view: "catalog",
+  activeProductId: null,
+  search: "",
+  activeCategory: "All",
+  cart: [],
+  currentUser: null,
+  authError: "",
+  lastOrder: null,
+  productDetailSize: null,
+  paying: false,
+  payError: "",
+};
+
+function setState(patch){ Object.assign(state, patch); render(); }
+
+// ---------------- Helpers ----------------
+function rupee(n){ return "₹" + n.toLocaleString("en-IN"); }
+function cartDetailed(){
+  return state.cart.map(c => ({...c, product: products.find(p=>p.id===c.productId)})).filter(c=>c.product);
+}
+function subtotal(){ return cartDetailed().reduce((s,c)=>s+c.product.price*c.qty,0); }
+function cartCount(){ return state.cart.reduce((s,c)=>s+c.qty,0); }
+function addToCart(productId, size, qty=1){
+  const existing = state.cart.find(c=>c.productId===productId && c.size===size);
+  if(existing){ existing.qty += qty; } else { state.cart.push({productId, size, qty}); }
+  render();
+}
+function updateQty(idx, delta){ state.cart[idx].qty = Math.max(1, state.cart[idx].qty+delta); render(); }
+function removeFromCart(idx){ state.cart.splice(idx,1); render(); }
+function goTo(v){ setState({view:v}); window.scrollTo(0,0); }
+function esc(s){ return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;"); }
+function stars(rating){
+  const full = Math.round(rating);
+  return "★".repeat(full) + "☆".repeat(5-full);
+}
+function productImgHtml(p, height){
+  const src = p.image ? p.image : placeholderImg(p);
+  return `<img class="product-img" style="height:${height}px" src="${src}" alt="${esc(p.name)}">`;
+}
+function placeholderImg(p){
+  // simple SVG placeholder tinted by category so items still look distinct without a real photo
+  const colors = { Outerwear:"#8C7A5B", Knitwear:"#C7A98B", Tailoring:"#33312C", Denim:"#2C3A52", Accessories:"#6E6C67" };
+  const c = colors[p.category] || "#999";
+  const svg = `<svg xmlns='http://www.w3.org/2000/svg' width='300' height='300'><rect width='100%' height='100%' fill='${c}'/><text x='50%' y='50%' fill='white' font-family='Inter,sans-serif' font-size='16' text-anchor='middle' dominant-baseline='middle'>${p.category}</text></svg>`;
+  return "data:image/svg+xml;base64," + btoa(svg);
+}
+
+// ---------------- Header ----------------
+function renderHeader(){
+  const u = state.currentUser;
+  return `
+  <header>
+    <div class="header-top">
+      <div class="logo" onclick="goTo('catalog')">bazaar<span>.</span></div>
+      <div class="search-bar">
+        <input id="searchInput" value="${esc(state.search)}" placeholder="Search products, brands and more"
+          oninput="setState({search:this.value})">
+        <button onclick="goTo('catalog')">🔍</button>
+      </div>
+      <div class="header-actions">
+        ${u ? `
+          <div class="item" onclick="logout()"><span>Hello, ${esc(u.name.split(' ')[0])}</span><b>Log out</b></div>
+          ${u.role==='admin' ? `<div class="item" onclick="goTo('admin')"><span>Seller</span><b>Admin Panel</b></div>` : ""}
+        ` : `<div class="item" onclick="goTo('login')"><span>Hello, sign in</span><b>Account</b></div>`}
+        <div class="item" onclick="goTo('cart')"><span>Your</span><b>Cart 🛒 ${cartCount()>0?`(${cartCount()})`:""}</b></div>
+      </div>
+    </div>
+    <div class="subnav">
+      <span class="${state.activeCategory==='All'?'active':''}" onclick="setState({activeCategory:'All',view:'catalog'})">All</span>
+      ${CATEGORIES.map(c=>`<span class="${state.activeCategory===c?'active':''}" onclick="setState({activeCategory:'${c}',view:'catalog'})">${c}</span>`).join("")}
+    </div>
+  </header>`;
+}
+function logout(){ setState({currentUser:null, view:'catalog'}); }
+
+// ---------------- Catalog ----------------
+function renderCatalog(){
+  const filtered = products.filter(p=>{
+    const matchesCat = state.activeCategory==="All" || p.category===state.activeCategory;
+    const matchesSearch = (p.name+" "+p.id+" "+p.category).toLowerCase().includes(state.search.toLowerCase());
+    return matchesCat && matchesSearch;
+  });
+  return `
+  <div class="wrap">
+    <div class="grid-cats">
+      ${["All",...CATEGORIES].map(cat=>`<button class="cat-chip ${state.activeCategory===cat?'active':''}" onclick="setState({activeCategory:'${cat}'})">${cat}</button>`).join("")}
+    </div>
+    ${filtered.length===0 ? `<p style="color:var(--textSoft);">No results. Try a different search or category.</p>` : `
+    <div class="product-grid">
+      ${filtered.map(p=>{
+        const discount = p.mrp ? Math.round(100 - (p.price/p.mrp*100)) : 0;
+        return `
+        <div class="product-card" onclick="setState({activeProductId:'${p.id}', view:'product', productDetailSize:null})">
+          ${productImgHtml(p,180)}
+          <div style="margin-top:10px; font-size:14px; font-weight:500; line-height:1.3;">${esc(p.name)}</div>
+          <div class="stars">${stars(p.rating)} <span style="color:var(--textSoft);font-size:12px;">(${p.reviews})</span></div>
+          <div class="price-row">
+            <span class="price">${rupee(p.price)}</span>
+            ${p.mrp ? `<span class="mrp">${rupee(p.mrp)}</span><span class="discount">${discount}% off</span>` : ""}
+          </div>
+        </div>`;
+      }).join("")}
+    </div>`}
+  </div>`;
+}
+
+// ---------------- Product detail ----------------
+function renderProduct(){
+  const p = products.find(x=>x.id===state.activeProductId);
+  if(!p) return `<div class="wrap">Product not found.</div>`;
+  const size = state.productDetailSize || p.sizes[0];
+  const discount = p.mrp ? Math.round(100 - (p.price/p.mrp*100)) : 0;
+  return `
+  <div class="wrap">
+    <div class="breadcrumb" onclick="goTo('catalog')">← Back to results</div>
+    <div class="detail-grid">
+      <div>${productImgHtml(p,400)}</div>
+      <div>
+        <h1 style="font-size:22px;font-weight:500;margin:0 0 4px;">${esc(p.name)}</h1>
+        <div class="stars">${stars(p.rating)} <span style="color:#007185;font-size:13px;">${p.reviews} ratings</span></div>
+        <hr style="border:none;border-top:1px solid var(--line);margin:12px 0;">
+        <div class="price-row" style="align-items:baseline;">
+          <span class="price" style="font-size:28px;">${rupee(p.price)}</span>
+          ${p.mrp ? `<span class="mrp">${rupee(p.mrp)}</span><span class="discount">${discount}% off</span>` : ""}
+        </div>
+        <p style="font-size:14px;line-height:1.7;color:var(--textSoft);max-width:480px;margin-top:16px;">${esc(p.desc)}</p>
+        <div style="margin-top:20px;">
+          <span style="font-size:12px;font-weight:600;color:var(--textSoft);display:block;margin-bottom:8px;">Size</span>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;">
+            ${p.sizes.map(s=>`<button class="size-chip ${size===s?'active':''}" onclick="setState({productDetailSize:'${s}'})">${s}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+      <div class="buybox">
+        <div style="font-size:20px;font-weight:700;">${rupee(p.price)}</div>
+        <div class="badge-secure">✓ Secure transaction · Razorpay</div>
+        <div style="margin-top:14px; display:flex; flex-direction:column; gap:10px;">
+          <button class="btn" id="addBtn" onclick="handleAddToCart('${p.id}','${size}')">Add to Cart</button>
+          <button class="btn orange" onclick="handleBuyNow('${p.id}','${size}')">Buy Now</button>
+        </div>
+      </div>
+    </div>
+  </div>`;
+}
+function handleAddToCart(id,size){
+  addToCart(id,size,1);
+  const btn = document.getElementById('addBtn');
+  if(btn){ btn.innerText = "Added ✓"; setTimeout(()=>{ if(document.getElementById('addBtn')) document.getElementById('addBtn').innerText="Add to Cart"; }, 1200); }
+}
+function handleBuyNow(id,size){
+  addToCart(id,size,1);
+  goTo(state.currentUser ? 'checkout' : 'login');
+}
+
+// ---------------- Cart ----------------
+function renderCart(){
+  const items = cartDetailed();
+  if(items.length===0){
+    return `<div class="wrap" style="max-width:800px;">
+      <h1 style="font-size:24px;font-weight:600;margin-bottom:20px;">Your Cart</h1>
+      <p style="color:var(--textSoft);margin-bottom:16px;">Your cart is empty.</p>
+      <button class="btn orange" onclick="goTo('catalog')">Continue Shopping</button>
+    </div>`;
+  }
+  return `
+  <div class="wrap" style="max-width:800px;">
+    <h1 style="font-size:24px;font-weight:600;margin-bottom:20px;">Your Cart (${cartCount()} items)</h1>
+    <div style="border:1px solid var(--line);border-radius:6px;overflow:hidden;">
+      ${items.map((c,idx)=>`
+        <div class="cart-row">
+          ${productImgHtml(c.product,70).replace('product-img','thumb-img')}
+          <div style="flex:1;">
+            <div style="font-weight:500;font-size:14px;">${esc(c.product.name)}</div>
+            <div style="font-size:12px;color:var(--textSoft);margin-top:2px;">Size: ${c.size}</div>
+            <div style="display:flex;align-items:center;gap:10px;margin-top:8px;">
+              <button class="qty-btn" onclick="updateQty(${idx},-1)">−</button>
+              <span style="font-size:13px;">${c.qty}</span>
+              <button class="qty-btn" onclick="updateQty(${idx},1)">+</button>
+            </div>
+          </div>
+          <div style="font-weight:700;font-size:15px;">${rupee(c.product.price*c.qty)}</div>
+          <button style="border:none;background:none;cursor:pointer;color:var(--danger);font-size:13px;text-decoration:underline;" onclick="removeFromCart(${idx})">Remove</button>
+        </div>
+      `).join("")}
+    </div>
+    <div class="row-between" style="padding:20px 0;font-size:18px;font-weight:600;">
+      <span>Subtotal</span><span>${rupee(subtotal())}</span>
+    </div>
+    <button class="btn orange" onclick="goTo(state.currentUser?'checkout':'login')">Proceed to Buy</button>
+  </div>`;
+}
+
+// ---------------- Auth ----------------
+function renderLogin(){
+  return `
+  <div class="wrap" style="max-width:380px;">
+    <div class="card-box">
+      <h1 style="font-size:22px;font-weight:600;margin-bottom:20px;">Sign in</h1>
+      <form onsubmit="return handleLogin(event)">
+        <label class="field"><span>Email</span><input type="email" id="loginEmail" required></label>
+        <label class="field"><span>Password</span><input type="password" id="loginPassword" required></label>
+        ${state.authError ? `<p style="color:var(--danger);font-size:13px;margin-bottom:12px;">${esc(state.authError)}</p>` : ""}
+        <button type="submit" class="btn orange" style="width:100%;">Sign in</button>
+      </form>
+      <p style="font-size:13px;color:var(--textSoft);margin-top:16px;">
+        New here? <a class="link" onclick="setState({authError:'',view:'signup'})">Create your account</a>
+      </p>
+    </div>
+  </div>`;
+}
+function handleLogin(e){
+  e.preventDefault();
+  const email = document.getElementById('loginEmail').value;
+  const password = document.getElementById('loginPassword').value;
+  const user = users.find(u=>u.email===email && u.password===password);
+  if(!user){ setState({authError:"Invalid email or password."}); return false; }
+  setState({authError:"", currentUser:user, view: state.cart.length ? 'checkout' : 'catalog'});
+  return false;
+}
+function renderSignup(){
+  return `
+  <div class="wrap" style="max-width:380px;">
+    <div class="card-box">
+      <h1 style="font-size:22px;font-weight:600;margin-bottom:20px;">Create account</h1>
+      <form onsubmit="return handleSignup(event)">
+        <label class="field"><span>Name</span><input id="suName" required></label>
+        <label class="field"><span>Email</span><input type="email" id="suEmail" required></label>
+        <label class="field"><span>Password</span><input type="password" id="suPassword" minlength="4" required></label>
+        ${state.authError ? `<p style="color:var(--danger);font-size:13px;margin-bottom:12px;">${esc(state.authError)}</p>` : ""}
+        <button type="submit" class="btn orange" style="width:100%;">Create account</button>
+      </form>
+      <p style="font-size:13px;color:var(--textSoft);margin-top:16px;">
+        Already have an account? <a class="link" onclick="setState({authError:'',view:'login'})">Sign in</a>
+      </p>
+    </div>
+  </div>`;
+}
+function handleSignup(e){
+  e.preventDefault();
+  const name = document.getElementById('suName').value;
+  const email = document.getElementById('suEmail').value;
+  const password = document.getElementById('suPassword').value;
+  if(users.some(u=>u.email===email)){ setState({authError:"An account with that email already exists."}); return false; }
+  const newUser = {name,email,password,role:'customer'};
+  users.push(newUser);
+  setState({authError:"", currentUser:newUser, view: state.cart.length ? 'checkout':'catalog'});
+  return false;
+}
+
+// ---------------- Checkout + Razorpay ----------------
+function renderCheckout(){
+  if(!state.currentUser) return renderLogin();
+  const items = cartDetailed();
+  return `
+  <div class="wrap" style="max-width:700px;">
+    <h1 style="font-size:22px;font-weight:600;margin-bottom:4px;">Checkout</h1>
+    <p style="font-size:12px;color:var(--textSoft);margin-bottom:20px;">
+      Payment is handled by Razorpay. Use their test card 4111 1111 1111 1111, any future date, any CVV — while your backend is running in test mode.
+    </p>
+    <form id="checkoutForm" onsubmit="return handleStartPayment(event)">
+      <label class="field"><span>Full name</span><input id="coName" value="${esc(state.currentUser.name||'')}" required></label>
+      <label class="field"><span>Address</span><input id="coAddress" required></label>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <label class="field"><span>City</span><input id="coCity" required></label>
+        <label class="field"><span>PIN code</span><input id="coZip" required></label>
+      </div>
+      <label class="field"><span>Phone</span><input id="coPhone" type="tel" required></label>
+      <div class="card-box">
+        ${items.map(c=>`<div class="row-between" style="font-size:13px;margin-bottom:6px;"><span>${esc(c.product.name)} × ${c.qty}</span><span>${rupee(c.product.price*c.qty)}</span></div>`).join("")}
+        <div class="row-between" style="font-size:15px;font-weight:700;margin-top:10px;padding-top:10px;border-top:1px solid var(--line);">
+          <span>Total</span><span>${rupee(subtotal())}</span>
+        </div>
+      </div>
+      ${state.payError ? `<p style="color:var(--danger);font-size:13px;margin-bottom:12px;">${esc(state.payError)}</p>` : ""}
+      <button type="submit" class="btn orange" style="width:100%;" ${state.paying?'disabled':''}>
+        ${state.paying ? "Processing…" : "Pay with Razorpay"}
+      </button>
+    </form>
+  </div>`;
+}
+
+async function handleStartPayment(e){
+  e.preventDefault();
+  const shipping = {
+    name: document.getElementById('coName').value,
+    address: document.getElementById('coAddress').value,
+    city: document.getElementById('coCity').value,
+    zip: document.getElementById('coZip').value,
+    phone: document.getElementById('coPhone').value,
+  };
+  const amount = subtotal();
+  setState({paying:true, payError:""});
+
+  try {
+    // 1. Ask OUR backend to create a Razorpay order (secret key stays server-side)
+    const res = await fetch(`${API_BASE_URL}/api/create-order`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ amount }) // amount in rupees; backend converts to paise
+    });
+    if(!res.ok) throw new Error("Backend not reachable");
+    const order = await res.json();
+
+    // 2. Open Razorpay's official checkout modal
+    const rzp = new Razorpay({
+      key: RAZORPAY_KEY_ID,
+      amount: order.amount,
+      currency: "INR",
+      name: "Bazaar",
+      description: "Order payment",
+      order_id: order.id,
+      prefill: { name: shipping.name, contact: shipping.phone },
+      theme: { color: "#FF9900" },
+      handler: async function (response) {
+        // 3. Ask OUR backend to verify the signature before trusting the payment
+        const verifyRes = await fetch(`${API_BASE_URL}/api/verify-payment`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(response)
+        });
+        const verify = await verifyRes.json();
+        if(verify.valid){
+          state.lastOrder = { number: response.razorpay_payment_id, items: cartDetailed(), total: subtotal(), shipping };
+          state.cart = [];
+          setState({paying:false, view:'confirmation'});
+        } else {
+          setState({paying:false, payError:"Payment could not be verified. No charge should have gone through."});
+        }
+      },
+      modal: {
+        ondismiss: function(){ setState({paying:false}); }
+      }
+    });
+    rzp.on('payment.failed', function(){ setState({paying:false, payError:"Payment failed. Please try again."}); });
+    rzp.open();
+  } catch(err){
+    setState({paying:false, payError:"Couldn't reach the payment backend. Is it running and is API_BASE_URL set correctly? See README."});
+  }
+  return false;
+}
+
+function renderConfirmation(){
+  const o = state.lastOrder;
+  if(!o) return `<div class="wrap">No order found.</div>`;
+  return `
+  <div class="wrap" style="max-width:500px;text-align:center;padding-top:40px;">
+    <div style="font-size:32px;color:var(--green);margin-bottom:16px;">✓</div>
+    <h1 style="font-size:22px;font-weight:600;margin-bottom:8px;">Order placed</h1>
+    <p style="color:var(--textSoft);margin-bottom:4px;">Payment / order ID</p>
+    <p style="font-size:16px;margin-bottom:24px;font-weight:600;">${o.number}</p>
+    <button class="btn orange" onclick="goTo('catalog')">Continue Shopping</button>
+  </div>`;
+}
+
+// ---------------- Admin ----------------
+let adminForm = { id:"", name:"", category:CATEGORIES[0], price:"", mrp:"", rating:"4.0", desc:"", sizes:"XS,S,M,L,XL", image:null };
+let adminEditingId = null;
+
+function renderAdmin(){
+  const u = state.currentUser;
+  if(!u || u.role!=='admin'){
+    return `<div class="wrap" style="max-width:500px;text-align:center;padding-top:60px;">
+      <p style="color:var(--textSoft);">You need an admin account to view this page.</p>
+      <div style="margin-top:16px;"><button class="btn orange" onclick="goTo('login')">Sign in</button></div>
+    </div>`;
+  }
+  return `
+  <div class="wrap" style="max-width:1000px;">
+    <h1 style="font-size:22px;font-weight:600;margin-bottom:20px;">Seller Admin — Manage Products</h1>
+    <form onsubmit="return handleAdminSubmit(event)" class="card-box">
+      <p style="font-size:13px;font-weight:600;margin-bottom:16px;color:var(--textSoft);">
+        ${adminEditingId ? `Editing ${adminEditingId}` : "Add a new product"}
+      </p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;">
+        <label class="field"><span>Name</span><input id="afName" value="${esc(adminForm.name)}" required></label>
+        <label class="field"><span>Category</span>
+          <select id="afCategory">${CATEGORIES.map(c=>`<option ${adminForm.category===c?'selected':''}>${c}</option>`).join("")}</select>
+        </label>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:16px;">
+        <label class="field"><span>Selling Price (₹)</span><input id="afPrice" type="number" value="${esc(adminForm.price)}" required></label>
+        <label class="field"><span>MRP (₹, optional)</span><input id="afMrp" type="number" value="${esc(adminForm.mrp)}"></label>
+        <label class="field"><span>Rating (0–5)</span><input id="afRating" type="number" step="0.1" min="0" max="5" value="${esc(adminForm.rating)}"></label>
+      </div>
+      <label class="field"><span>Sizes (comma separated)</span><input id="afSizes" value="${esc(adminForm.sizes)}"></label>
+      <label class="field"><span>Description</span><textarea id="afDesc" rows="3">${esc(adminForm.desc)}</textarea></label>
+      <label class="field">
+        <span>Product photo</span>
+        <div class="file-drop" onclick="document.getElementById('afImageInput').click()">
+          Click to upload an image (JPG/PNG)
+          <input type="file" id="afImageInput" accept="image/*" style="display:none" onchange="handleImageUpload(event)">
+        </div>
+        <img id="afImagePreview" class="preview-img" style="${adminForm.image?'':'display:none'}" src="${adminForm.image||''}">
+      </label>
+      <div style="display:flex;gap:12px;margin-top:8px;">
+        <button type="submit" class="btn orange">${adminEditingId ? "Save changes" : "Add product"}</button>
+        ${adminEditingId ? `<button type="button" class="btn outline" onclick="cancelAdminEdit()">Cancel</button>` : ""}
+      </div>
+    </form>
+
+    <div style="border:1px solid var(--line);border-radius:6px;overflow:hidden;">
+      ${products.map(p=>`
+        <div class="admin-row">
+          <img class="thumb-img" src="${p.image || placeholderImg(p)}">
+          <div style="flex:1;">
+            <div style="font-size:14px;font-weight:500;">${esc(p.name)}</div>
+            <div style="font-size:12px;color:var(--textSoft);">${p.id} · ${p.category} · ${rupee(p.price)}</div>
+          </div>
+          <button class="btn outline" onclick="startEditProduct('${p.id}')">Edit</button>
+          <button class="btn danger" onclick="deleteProduct('${p.id}')">Delete</button>
+        </div>
+      `).join("")}
+    </div>
+  </div>`;
+}
+function handleImageUpload(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = function(evt){
+    adminForm.image = evt.target.result;
+    const preview = document.getElementById('afImagePreview');
+    preview.src = adminForm.image;
+    preview.style.display = "block";
+  };
+  reader.readAsDataURL(file);
+}
+function startEditProduct(id){
+  const p = products.find(x=>x.id===id);
+  adminEditingId = id;
+  adminForm = { id:p.id, name:p.name, category:p.category, price:p.price, mrp:p.mrp||"", rating:p.rating||"4.0", desc:p.desc, sizes:p.sizes.join(","), image:p.image };
+  render();
+}
+function cancelAdminEdit(){
+  adminEditingId = null;
+  adminForm = { id:"", name:"", category:CATEGORIES[0], price:"", mrp:"", rating:"4.0", desc:"", sizes:"XS,S,M,L,XL", image:null };
+  render();
+}
+function deleteProduct(id){ products = products.filter(p=>p.id!==id); render(); }
+function handleAdminSubmit(e){
+  e.preventDefault();
+  const newProduct = {
+    id: adminEditingId || ("SK-" + Math.floor(100+Math.random()*900)),
+    name: document.getElementById('afName').value,
+    category: document.getElementById('afCategory').value,
+    price: Number(document.getElementById('afPrice').value)||0,
+    mrp: Number(document.getElementById('afMrp').value)||0,
+    rating: Number(document.getElementById('afRating').value)||4.0,
+    reviews: adminEditingId ? (products.find(p=>p.id===adminEditingId)?.reviews||0) : 0,
+    desc: document.getElementById('afDesc').value,
+    sizes: document.getElementById('afSizes').value.split(",").map(s=>s.trim()).filter(Boolean),
+    image: adminForm.image || null,
+  };
+  if(adminEditingId){ products = products.map(p=>p.id===adminEditingId?newProduct:p); }
+  else { products.push(newProduct); }
+  cancelAdminEdit();
+  return false;
+}
+
+// ---------------- Main render ----------------
+function render(){
+  let content = "";
+  if(state.view==="catalog") content = renderCatalog();
+  else if(state.view==="product") content = renderProduct();
+  else if(state.view==="cart") content = renderCart();
+  else if(state.view==="login") content = renderLogin();
+  else if(state.view==="signup") content = renderSignup();
+  else if(state.view==="checkout") content = renderCheckout();
+  else if(state.view==="confirmation") content = renderConfirmation();
+  else if(state.view==="admin") content = renderAdmin();
+
+  document.getElementById("root").innerHTML = `
+    ${renderHeader()}
+    ${content}
+    <footer>Bazaar — demo storefront. Real payments require your own Razorpay account and the backend in bazaar-backend/.</footer>
+  `;
+}
+
+render();
+</script>
+</body>
+</html>
